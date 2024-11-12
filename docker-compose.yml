@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  appointment-service:
+    build: ./appointment-service
+    ports:
+      - "8082:8082"  # Maps container's port 8080 to host's port 8082
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://appointment-db:3306/appointmentdb
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+    depends_on:
+      - appointment-db
+
+  notification-service:
+    build: ./notification-service
+    ports:
+      - "8083:8083"  # Maps container's port 8080 to host's port 8083
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://notification-db:3306/notificationdb
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+    depends_on:
+      - notification-db
+
+  patient-service:
+    build: ./patient-service
+    ports:
+      - "8081:8081"  # Maps container's port 8080 to host's port 8081
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://patient-db:3306/patientdb
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+    depends_on:
+      - patient-db
+
+  # Databases for each service
+  appointment-db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: appointmentdb
+    ports:
+      - "3307:3306"  # Host port 3307 maps to container's MySQL port 3306
+
+  notification-db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: notificationdb
+    ports:
+      - "3308:3306"  # Host port 3308 maps to container's MySQL port 3306
+
+  patient-db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: patientdb
+    ports:
+      - "3309:3306"  # Host port 3309 maps to container's MySQL port 3306
