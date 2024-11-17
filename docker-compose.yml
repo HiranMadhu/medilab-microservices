@@ -1,75 +1,84 @@
-version: '3.8'
-
+version: "3.8"
 services:
-  appointment-service:
-    build: ./appointment-service
-    ports:
-      - "8082:8082"  # Maps container's port 8080 to host's port 8082
+  # MySQL database service
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://appointment-db:3306/appointmentdb
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
-    depends_on:
-      - appointment-db
-
-  notification-service:
-    build: ./notification-service
+      MYSQL_ROOT_PASSWORD: rootpassword  # Root password for MySQL
+      MYSQL_DATABASE: medilab_db  # Create this database
+      MYSQL_USER: user  # MySQL user
+      MYSQL_PASSWORD: userpassword  # Password for MySQL user
     ports:
-      - "8083:8083"  # Maps container's port 8080 to host's port 8083
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://notification-db:3306/notificationdb
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
-    depends_on:
-      - notification-db
-
-  patient-service:
-    build: ./patient-service
-    ports:
-      - "8081:8081"  # Maps container's port 8080 to host's port 8081
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://patient-db:3306/patientdb
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
-    depends_on:
-      - patient-db
+      - "3306:3306"  # Expose MySQL port
+    networks:
+      - medilab-network
+    volumes:
+      - mysql-data:/var/lib/mysql  # Persist data in a Docker volume
 
   # Aggregator Service
   aggregator-service:
     build: ./aggregator-service
-    ports:
-      - "8084:8084"  # Maps container's port 8084 to host's port 8084
+    container_name: aggregator-service
     depends_on:
-      - appointment-service
-      - patient-service
+      - mysql-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/medilab_db  # Connecting to medilab_db
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: userpassword
+    ports:
+      - "8084:8084"  # Expose to host machine
     networks:
       - medilab-network
 
-  # Databases for each service
-  appointment-db:
-    image: mysql:8.0
+  # Appointment Service
+  appointment-service:
+    build: ./appointment-service
+    container_name: appointment-service
+    depends_on:
+      - mysql-db
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: appointmentdb
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/medilab_db  # Connecting to medilab_db
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: userpassword
     ports:
-      - "3307:3306"  # Host port 3307 maps to container's MySQL port 3306
+      - "8082:8082"  # Expose to host machine
+    networks:
+      - medilab-network
 
-  notification-db:
-    image: mysql:8.0
+  # Notification Service
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    depends_on:
+      - mysql-db
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: notificationdb
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/medilab_db  # Connecting to medilab_db
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: userpassword
     ports:
-      - "3308:3306"  # Host port 3308 maps to container's MySQL port 3306
+      - "8083:8083"  # Expose to host machine
+    networks:
+      - medilab-network
 
-  patient-db:
-    image: mysql:8.0
+  # Patient Service
+  patient-service:
+    build: ./patient-service
+    container_name: patient-service
+    depends_on:
+      - mysql-db
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: patientdb
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/medilab_db  # Connecting to medilab_db
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: userpassword
     ports:
-      - "3309:3306"  # Host port 3309 maps to container's MySQL port 3306
+      - "8081:8081"  # Expose to host machine
+    networks:
+      - medilab-network
 
 networks:
   medilab-network:
     driver: bridge
+
+volumes:
+  mysql-data:  # Volume for persistent storage of MySQL data
